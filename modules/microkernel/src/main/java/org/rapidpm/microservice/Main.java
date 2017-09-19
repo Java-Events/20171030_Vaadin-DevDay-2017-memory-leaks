@@ -28,6 +28,7 @@ import org.rapidpm.microservice.optionals.header.ActiveUrlPrinter;
 import org.rapidpm.microservice.optionals.header.HeaderScreenPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.stagemonitor.core.Stagemonitor;
 
 
 public class Main {
@@ -42,6 +43,7 @@ public class Main {
   }
 
   public static void main(String[] args) {
+    Stagemonitor.init();
     deploy();
   }
 

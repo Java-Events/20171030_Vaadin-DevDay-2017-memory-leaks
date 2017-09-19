@@ -25,13 +25,16 @@ import org.rapidpm.vaadin.server.api.SecurityService;
 import org.rapidpm.vaadin.server.api.SessionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.stagemonitor.core.Stagemonitor;
 import com.vaadin.annotations.PreserveOnRefresh;
+import com.vaadin.annotations.Title;
 import com.vaadin.annotations.Widgetset;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.ui.UI;
 
 @PreserveOnRefresh
 @Widgetset("org.rapidpm.vaadin.server.VaadinJumpstartWidgetset")
+@Title("JumpstartServlet")
 public class JumpstartUI extends UI {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JumpstartUI.class);
