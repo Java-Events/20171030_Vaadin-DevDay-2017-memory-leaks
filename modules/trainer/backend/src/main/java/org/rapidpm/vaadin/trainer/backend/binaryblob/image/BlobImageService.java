@@ -13,7 +13,7 @@ import org.rapidpm.vaadin.trainer.backend.binaryblob.BlobService;
 /**
  *
  */
-public class BlobImageService /*implements BlobService*/ {
+public class BlobImageService implements BlobService {
 
   public static final String STORAGE_PREFIX = "_data/_nasa_pics/_0512px/";
 

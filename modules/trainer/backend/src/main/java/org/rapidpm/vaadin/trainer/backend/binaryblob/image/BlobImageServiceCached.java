@@ -14,7 +14,7 @@ import org.rapidpm.vaadin.trainer.backend.binaryblob.BlobService;
 /**
  *
  */
-public class BlobImageServiceCached implements BlobService {
+public class BlobImageServiceCached /*implements BlobService*/ {
 
 
   public static final String STORAGE_PREFIX = "_data/_nasa_pics/_0512px/";
@@ -25,7 +25,7 @@ public class BlobImageServiceCached implements BlobService {
       = (blobID) -> readAllBytes(new File(STORAGE_PREFIX + blobID).toPath());
 
 
-  @Override
+  //@Override
   public Result<byte[]> loadBlob(String blobID) {
     //hard coded right now
     final boolean containsKey = cache.containsKey(blobID);
