@@ -19,6 +19,8 @@
 
 package org.rapidpm.microservice;
 
+import static org.rapidpm.microservice.MainUndertow.STAGEMONITOR_ACTIVE_PROPERTY;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -43,7 +45,10 @@ public class Main {
   }
 
   public static void main(String[] args) {
-    Stagemonitor.init();
+    //TODO add for stagemonitor
+    final Boolean stagemonitorActive = Boolean.valueOf(System.getProperty(STAGEMONITOR_ACTIVE_PROPERTY , "false"));
+    if (stagemonitorActive) Stagemonitor.init();
+
     deploy();
   }
 
@@ -82,7 +87,7 @@ public class Main {
     System.out.println("");
     System.out.println("");
     System.out.println(" ############  Startup finished  = " + deployStop + " ############  ");
-    System.out.println(" ############  DDI      = " + ddi      + " [ms]                        ############");
+    System.out.println(" ############  DDI      = " + ddi + " [ms]                        ############");
     System.out.println(" ############  Undertow = " + undertow + " [ms]                        ############");
     System.out.println(" ############  Complete = " + complete + " [ms]                        ############");
     System.out.println(" ###############################  Enjoy ###############################");

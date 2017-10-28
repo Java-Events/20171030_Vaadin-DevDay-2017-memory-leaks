@@ -21,16 +21,38 @@ package org.rapidpm.vaadin.server;
 
 import javax.inject.Inject;
 
+import org.rapidpm.ddi.DI;
+import org.rapidpm.vaadin.server.api.SecurityService;
+import org.rapidpm.vaadin.server.api.SessionService;
 import org.rapidpm.vaadin.trainer.modules.login.LoginComponent;
+import org.rapidpm.vaadin.trainer.modules.mainview.MainView;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.ui.Component;
 
 public class MyUIComponentFactory implements JumpstartUIComponentFactory {
 
-  @Inject LoginComponent loginScreen;
+  //@Inject LoginComponent loginScreen;
+
+  @Inject private SessionService userService;
+  @Inject private SecurityService securityService;
 
   @Override
   public Component createComponentToSetAsContent(final VaadinRequest vaadinRequest) {
-    return loginScreen;
+
+    final boolean userPresent = isUserPresent();
+    final boolean remembered = isRemembered();
+    System.out.println("remembered = " + remembered);
+    System.out.println("userPresent = " + userPresent);
+    if (! (userPresent && remembered))  return DI.activateDI(LoginComponent.class);
+    else                                return DI.activateDI(MainView.class);
   }
+
+  private boolean isRemembered() {
+    return securityService.isRemembered();
+  }
+
+  private boolean isUserPresent() {
+    return userService.isUserPresent();
+  }
+
 }

@@ -46,6 +46,7 @@ public class PropertyServiceInMemory implements PropertyService {
     storage.put("menu.point.calculate", "Calc");
     storage.put("menu.point.write", "Write");
     storage.put("menu.point.report", "Report");
+    storage.put("menu.point.games.memory", "Games-Memory");
     storage.put("menu.point.exit", "Logout");
     storage.put("menu.point.exit.message", "You want to go?");
 

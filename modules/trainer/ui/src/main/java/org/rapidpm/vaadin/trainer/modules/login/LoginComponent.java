@@ -7,12 +7,9 @@ import static org.rapidpm.vaadin.ComponentIDGenerator.passwordID;
 import static org.rapidpm.vaadin.ComponentIDGenerator.textfieldID;
 import static org.rapidpm.vaadin.server.SessionAttributes.SESSION_ATTRIBUTE_USER;
 
-import java.util.function.Supplier;
-
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.rapidpm.ddi.DI;
 import org.rapidpm.vaadin.trainer.api.property.PropertyService;
 import org.rapidpm.vaadin.trainer.api.security.login.LoginService;
 import org.rapidpm.vaadin.trainer.api.security.user.UserService;
@@ -83,18 +80,25 @@ public class LoginComponent extends Composite {
       final String passwordValue = password.getValue();
       clearInputFields();
 
-      final boolean check = loginService.check(loginValue , passwordValue);
-
-      final UI currentUI = UI.getCurrent();
-      currentUI.setContent((check) ? activateDI(MainView.class) : this);
-
-      final VaadinSession vaadinSession = currentUI.getSession();
-      vaadinSession.setAttribute(SESSION_ATTRIBUTE_USER , (check) ? userService.loadUser(loginValue) : null);
-
-      if (! check)
+      if (loginService.check(loginValue , passwordValue)) {
+        final UI currentUI = UI.getCurrent();
+        final VaadinSession vaadinSession = currentUI.getSession();
+        userService
+            .loadUser(loginValue)
+            .ifPresentOrElse(
+                (u) -> {
+                  vaadinSession.setAttribute(SESSION_ATTRIBUTE_USER , u);
+                  currentUI.setContent(activateDI(MainView.class));
+                } ,
+                (msg) -> {
+                  vaadinSession.setAttribute(SESSION_ATTRIBUTE_USER , null);
+                  currentUI.setContent(this);
+                });
+      } else {
         show(property("login.failed") ,
              property("login.failed.description") ,
              Notification.Type.WARNING_MESSAGE);
+      }
 
     });
 

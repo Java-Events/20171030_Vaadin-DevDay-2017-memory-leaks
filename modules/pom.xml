@@ -15,7 +15,7 @@
     <module>microkernel</module>
     <module>vaadin</module>
     <module>trainer</module>
-    <module>vaadin-tdd</module>
+    <module>memleak01</module>
   </modules>
 
 

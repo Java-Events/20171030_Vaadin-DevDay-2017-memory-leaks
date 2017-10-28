@@ -20,44 +20,38 @@
 package org.rapidpm.vaadin.server;
 
 import javax.inject.Inject;
+import javax.servlet.ServletContext;
 
 import org.rapidpm.vaadin.server.api.SecurityService;
 import org.rapidpm.vaadin.server.api.SessionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stagemonitor.core.Stagemonitor;
+import org.stagemonitor.web.servlet.ServletPlugin;
 import com.vaadin.annotations.PreserveOnRefresh;
+import com.vaadin.annotations.Push;
 import com.vaadin.annotations.Title;
 import com.vaadin.annotations.Widgetset;
 import com.vaadin.server.VaadinRequest;
+import com.vaadin.server.VaadinServlet;
+import com.vaadin.server.VaadinSession;
 import com.vaadin.ui.UI;
 
 @PreserveOnRefresh
-@Widgetset("org.rapidpm.vaadin.server.VaadinJumpstartWidgetset")
 @Title("JumpstartServlet")
+@Push
 public class JumpstartUI extends UI {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JumpstartUI.class);
 
-
-  @Inject private SessionService userService;
-  @Inject private SecurityService securityService;
   @Inject private JumpstartUIComponentFactory jumpstartUIComponentFactory;
 
   @Override
   protected void init(VaadinRequest vaadinRequest) {
     LOGGER.debug("init - request = " + vaadinRequest);
-    if (! (isUserPresent() && isRemembered()))
-      setContent(jumpstartUIComponentFactory.createComponentToSetAsContent(vaadinRequest));
+    LOGGER.debug("init - request getWrappedSession id = " + vaadinRequest.getWrappedSession().getId());
+    setContent(jumpstartUIComponentFactory.createComponentToSetAsContent(vaadinRequest));
     setSizeFull();
-  }
-
-  private boolean isRemembered() {
-    return securityService.isRemembered();
-  }
-
-  private boolean isUserPresent() {
-    return userService.isUserPresent();
   }
 
 }

@@ -9,10 +9,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authc.AuthenticationException;
-import org.apache.shiro.authc.UsernamePasswordToken;
-import org.apache.shiro.subject.Subject;
+
 import org.rapidpm.frp.model.Pair;
 import org.rapidpm.vaadin.trainer.api.security.login.LoginService;
 import org.slf4j.Logger;
@@ -21,9 +18,9 @@ import org.slf4j.LoggerFactory;
 /**
  *
  */
-public class LoginServiceShiro implements LoginService {
+public class LoginServiceInMemory implements LoginService {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(LoginServiceShiro.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(LoginServiceInMemory.class);
 
   private static final Map<String, Pair<LocalDateTime, Integer>> failedLogins = new ConcurrentHashMap<>();
   public static final int MAX_FAILED_LOGINS = 3;
@@ -42,7 +39,7 @@ public class LoginServiceShiro implements LoginService {
     }
   }
 
-  private static final FailedLoginCleaner FAILED_LOGIN_CLEANER = new FailedLoginCleaner(new TimerTask() {
+  private static final LoginServiceInMemory.FailedLoginCleaner FAILED_LOGIN_CLEANER = new LoginServiceInMemory.FailedLoginCleaner(new TimerTask() {
     @Override
     public void run() {
       LOGGER.debug(" start cleaning " + LocalDateTime.now());
@@ -66,7 +63,6 @@ public class LoginServiceShiro implements LoginService {
 
   @Override
   public boolean check(String login , String password) {
-    //TODO FAILED LOGIN Counter Rule
     if (failedLogins.containsKey(login)) {
       Pair<LocalDateTime, Integer> pair = failedLogins.get(login);
       LocalDateTime failedLoginDate = pair.getT1();
@@ -78,60 +74,36 @@ public class LoginServiceShiro implements LoginService {
         if (minutes > MINUTES_TO_WAIT) {
           LOGGER.debug("minutes > MINUTES_TO_WAIT (remove login) " + failedLoginCount);
           failedLogins.remove(login); // start from zero
-        }
-        else {
+        } else {
           LOGGER.debug("failedLoginCount <= MAX_FAILED_LOGINS " + failedLoginCount);
           failedLogins.compute(
               login ,
               (s , faildPair) -> new Pair<>(LocalDateTime.now() , failedLoginCount + 1));
           return false;
         }
-      }
-      else {
+      } else {
         LOGGER.debug("failedLoginCount => " + login + " - " + failedLoginCount);
       }
     }
 
-    final UsernamePasswordToken token = new UsernamePasswordToken(login , password);
-    final Subject subject = SecurityUtils.getSubject();
-    try {
-      subject.login(token);
-      printInfos(subject);
+
+    //TODO Demo InMemory
+    if(login != null && password != null && checkUserPassword(login, password)){
       failedLogins.remove(login);
-    } catch (AuthenticationException e) {
+      return true;
+    } else {
       LOGGER.debug("login failed " + login);
-      //e.printStackTrace();
       failedLogins.putIfAbsent(login , new Pair<>(LocalDateTime.now() , 0));
       failedLogins.compute(
           login ,
           (s , oldPair) -> new Pair<>(LocalDateTime.now() , oldPair.getT2() + 1));
+      return false;
     }
-    return subject.isAuthenticated();
   }
 
-
-  private void printInfos(Subject subject) {
-//    List<String> roles = new ArrayList<>();
-//    roles.add("parent");
-//    System.out.println("subject = " + subject);
-//    PrincipalCollection principals = subject.getPrincipals();
-//    principals.forEach(p -> {
-//      System.out.println("p = " + p);
-//
-//      boolean[] booleans = subject.hasRoles(roles);
-//      for (boolean aBoolean : booleans) {
-//        System.out.println("aBoolean = " + aBoolean);
-//      }
-//      System.out.println("write:WriteComponent = " + subject.isPermitted("write:WriteComponent"));
-//      System.out.println("math:CalcComponent = " + subject.isPermitted("math:CalcComponent"));
-//      System.out.println("report:* = " + subject.isPermitted("report:*"));
-//      System.out.println("report:ReportDashboard = " + subject.isPermitted("report:ReportDashboard"));
-//      System.out.println("report:xx = " + subject.isPermitted("report:xx"));
-//
-//
-//    });
-
+  private boolean checkUserPassword(String login , String password) {
+    if (login.equals("sven") && password.equals("sven")) return true;
+    if (login.equals("admin") && password.equals("admin")) return true;
+    return false;
   }
-
-
 }

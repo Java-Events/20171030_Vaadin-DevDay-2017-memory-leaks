@@ -1,14 +1,14 @@
 package org.rapidpm.vaadin.server.api;
 
-import org.apache.shiro.SecurityUtils;
-
 /**
  *
  */
 public class SecurityServiceImpl implements SecurityService {
+
+  //TODO real implementation is needed
   @Override
   public boolean isRemembered() {
-    return SecurityUtils.getSubject().isRemembered();
+    return true;
   }
 }
 

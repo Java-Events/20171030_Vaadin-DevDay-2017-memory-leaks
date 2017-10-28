@@ -24,6 +24,8 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 
 import org.rapidpm.ddi.DI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.vaadin.server.DefaultUIProvider;
 import com.vaadin.server.DeploymentConfiguration;
 import com.vaadin.server.ServiceException;
@@ -32,11 +34,13 @@ import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinResponse;
 import com.vaadin.server.VaadinServlet;
 import com.vaadin.server.VaadinServletService;
+import com.vaadin.server.VaadinSession;
 import com.vaadin.ui.UI;
 
 
 public class DDIVaadinServletService extends VaadinServletService {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(DDIVaadinServletService.class);
 
   public DDIVaadinServletService(VaadinServlet servlet ,
                                  DeploymentConfiguration deploymentConfiguration ,
@@ -53,17 +57,25 @@ public class DDIVaadinServletService extends VaadinServletService {
     addSessionInitListener(event -> event.getSession().addUIProvider(new DefaultUIProvider() {
       @Override
       public UI createInstance(final UICreateEvent event) {
+        LOGGER.debug("addSessionInitListener create UI instance event = " + event.getUiId());
         return DI.activateDI(event.getUIClass());
       }
     }));
+    addSessionDestroyListener(event -> LOGGER.debug("addSessionDestroyListener event = " + event.getSession()));
 
-    addSessionDestroyListener(event -> { });
+    addServiceDestroyListener(event -> LOGGER.debug("addServiceDestroyListener event = " + event.getSource()));
   }
 
 
   @Override
   public void handleRequest(VaadinRequest request , VaadinResponse response) throws ServiceException {
     super.handleRequest(request , response);
+
+    final VaadinSession current = VaadinSession.getCurrent();
+    if (current != null){
+      final int size = current.getUIs().size();
+      LOGGER.debug(" handleRequest getUIs().size() size = " + size);
+    }
   }
 
   @PostConstruct

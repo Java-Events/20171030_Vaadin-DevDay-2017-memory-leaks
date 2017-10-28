@@ -1,8 +1,5 @@
 package org.rapidpm.vaadin.trainer.modules.mainview.menu;
 
-import static com.vaadin.icons.VaadinIcons.ABACUS;
-import static com.vaadin.icons.VaadinIcons.BAR_CHART;
-import static com.vaadin.icons.VaadinIcons.EDIT;
 import static com.vaadin.icons.VaadinIcons.EXIT;
 import static com.vaadin.icons.VaadinIcons.VIEWPORT;
 import static com.vaadin.ui.themes.ValoTheme.BUTTON_BORDERLESS;
@@ -11,10 +8,8 @@ import static com.vaadin.ui.themes.ValoTheme.BUTTON_ICON_ALIGN_TOP;
 import static com.vaadin.ui.themes.ValoTheme.MENU_ITEM;
 import static com.vaadin.ui.themes.ValoTheme.MENU_PART;
 import static com.vaadin.ui.themes.ValoTheme.MENU_PART_LARGE_ICONS;
-import static org.apache.shiro.SecurityUtils.getSubject;
 import static org.rapidpm.ddi.DI.activateDI;
 import static org.rapidpm.vaadin.ComponentIDGenerator.buttonID;
-import static org.rapidpm.vaadin.server.SessionAttributes.SESSION_ATTRIBUTE_USER;
 
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -22,22 +17,20 @@ import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.rapidpm.ddi.DI;
 import org.rapidpm.frp.model.Pair;
 import org.rapidpm.vaadin.trainer.api.property.PropertyService;
+import org.rapidpm.vaadin.trainer.api.security.login.RoleService;
+import org.rapidpm.vaadin.trainer.api.security.user.User;
 import org.rapidpm.vaadin.trainer.modules.mainview.MainView;
-import org.rapidpm.vaadin.trainer.modules.mainview.calc.CalcComponent;
 import org.rapidpm.vaadin.trainer.modules.mainview.dashboard.DashboardComponent;
-import org.rapidpm.vaadin.trainer.modules.mainview.report.ReportComponent;
-import org.rapidpm.vaadin.trainer.modules.mainview.write.WriteComponent;
 import org.vaadin.dialogs.ConfirmDialog;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.VaadinSession;
+import com.vaadin.server.WrappedSession;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.Composite;
 import com.vaadin.ui.CssLayout;
-import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.Layout;
 import com.vaadin.ui.UI;
 
@@ -47,9 +40,6 @@ import com.vaadin.ui.UI;
 public class MenuComponent extends Composite {
 
   public static final String MENU_POINT_DASHBOARD = "menu.point.dashboard";
-  public static final String MENU_POINT_CALCULATE = "menu.point.calculate";
-  public static final String MENU_POINT_WRITE = "menu.point.write";
-  public static final String MENU_POINT_REPORT = "menu.point.report";
   public static final String MENU_POINT_EXIT = "menu.point.exit";
   public static final String MENU_POINT_EXIT_MESSAGE = "menu.point.exit.message";
   public static final String MENU_BTN_WIDTH = "100%";
@@ -60,6 +50,7 @@ public class MenuComponent extends Composite {
 
 
   @Inject private PropertyService propertyService;
+  @Inject private RoleService roleService;
 
   private String property(String key) {
     return propertyService.resolve(key);
@@ -79,13 +70,9 @@ public class MenuComponent extends Composite {
     return Stream
         .of(
             createMenuButton(VIEWPORT , MENU_POINT_DASHBOARD , DashboardComponent::new) ,
-            createMenuButton(ABACUS , MENU_POINT_CALCULATE , CalcComponent::new) ,
-            createMenuButton(EDIT , MENU_POINT_WRITE , WriteComponent::new) ,
-            createMenuButton(BAR_CHART , MENU_POINT_REPORT , ReportComponent::new) ,
-
             createMenuButtonForNotification(EXIT , MENU_POINT_EXIT , MENU_POINT_EXIT_MESSAGE)
         )
-        .filter(p -> getSubject().isPermitted(p.getT1()))
+        .filter(p -> roleService.hasRole("" , p.getT1())) //TODO how to get logged in user
         .map(Pair::getT2)
         .map(Component.class::cast)
         .toArray(Component[]::new);
@@ -105,10 +92,14 @@ public class MenuComponent extends Composite {
                            property(message) ,
                            (ConfirmDialog.Listener) dialog -> {
                              if (dialog.isConfirmed()) {
-                               getSubject().logout();
-                               VaadinSession vaadinSession = ui.getSession();
-                               vaadinSession.setAttribute(SESSION_ATTRIBUTE_USER , null);
-                               vaadinSession.close();
+                               //TODO log out from Security
+//                               UI.getCurrent().close();
+                               VaadinSession vaadinSession = VaadinSession.getCurrent();
+                               vaadinSession.setAttribute(User.class , null);
+                               WrappedSession httpSession = vaadinSession.getSession();
+                               httpSession.invalidate();
+//                               VaadinSession vaadinSession = ui.getSession();
+//                               vaadinSession.close();
                                ui.getPage().setLocation("/");
                              } else {
                                // VaadinUser did not confirm
@@ -126,7 +117,7 @@ public class MenuComponent extends Composite {
 
     button.setId(buttonID().apply(MainView.class , caption));
 
-    return new Pair<>(mapToShiroRole(caption) , button);
+    return new Pair<>(caption , button);
 
   }
 
@@ -146,16 +137,8 @@ public class MenuComponent extends Composite {
     button.setWidth(MENU_BTN_WIDTH);
 
     button.setId(buttonID().apply(this.getClass() , caption));
-    return new Pair<>(mapToShiroRole(caption) , button);
+    return new Pair<>(caption , button);
   }
 
-  //not nice
-  //TODO how to connect to Shiro?
-  private String mapToShiroRole(String caption) {
-    return (caption.equals(MENU_POINT_CALCULATE)) ? "math:CalcComponent" :
-           (caption.equals(MENU_POINT_WRITE)) ? "write:WriteComponent" :
-           (caption.equals(MENU_POINT_REPORT)) ? "report:*" :
-           "all:default";
-  }
 
 }

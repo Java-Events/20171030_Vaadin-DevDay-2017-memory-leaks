@@ -31,8 +31,7 @@ import com.vaadin.annotations.VaadinServletConfiguration;
     urlPatterns = "/*",
     name = "JumpstartServlet",
     displayName = "JumpstartServlet",
-    asyncSupported = true,
-    loadOnStartup = 1)
+    asyncSupported = true)
 @VaadinServletConfiguration(ui = JumpstartUI.class, productionMode = false)
 public class JumpstartServlet extends DDIVaadinServlet {
 

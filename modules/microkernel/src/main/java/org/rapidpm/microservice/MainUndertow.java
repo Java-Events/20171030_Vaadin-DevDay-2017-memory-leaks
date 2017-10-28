@@ -4,29 +4,26 @@ import static io.undertow.UndertowOptions.ENABLE_HTTP2;
 import static io.undertow.servlet.Servlets.defaultContainer;
 import static io.undertow.servlet.Servlets.deployment;
 import static io.undertow.servlet.Servlets.servlet;
-import static javax.servlet.DispatcherType.ERROR;
-import static javax.servlet.DispatcherType.FORWARD;
-import static javax.servlet.DispatcherType.INCLUDE;
-import static javax.servlet.DispatcherType.REQUEST;
 
+import java.util.Collections;
 import java.util.EventListener;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.servlet.ServletContainerInitializer;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebInitParam;
 import javax.servlet.annotation.WebListener;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 
-import org.apache.shiro.web.env.EnvironmentLoaderListener;
-import org.apache.shiro.web.servlet.ShiroFilter;
 import org.rapidpm.ddi.DI;
 import org.rapidpm.ddi.reflections.ReflectionUtils;
 import org.rapidpm.microservice.servlet.ServletInstanceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.stagemonitor.web.servlet.ServletPlugin;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.Undertow.Builder;
@@ -34,10 +31,11 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.PathHandler;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.DeploymentManager;
-import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.ListenerInfo;
 import io.undertow.servlet.api.ServletContainer;
+import io.undertow.servlet.api.ServletContainerInitializerInfo;
 import io.undertow.servlet.api.ServletInfo;
+import io.undertow.servlet.util.ImmediateInstanceFactory;
 
 /**
  * Copyright (C) 2010 RapidPM
@@ -60,13 +58,11 @@ public class MainUndertow {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MainUndertow.class);
 
-  public static final String DEFAULT_FILTER_MAPPING = "/*";
-  public static final String DEFAULT_SHIRO_FILTER_NAME = "ShiroFilter";
   public static final String MYAPP = "/microservice";
   public static final int DEFAULT_SERVLET_PORT = 7080;
   public static final String SERVLET_PORT_PROPERTY = "org.rapidpm.microservice.servlet.port";
   public static final String SERVLET_HOST_PROPERTY = "org.rapidpm.microservice.servlet.host";
-  public static final String SHIRO_ACTIVE_PROPERTY = "org.rapidpm.microservice.security.shiro.active";
+  public static final String STAGEMONITOR_ACTIVE_PROPERTY = "org.rapidpm.microservice.apm.stagemonitor.active";
 
 
   private static Undertow undertowServer;
@@ -114,18 +110,20 @@ public class MainUndertow {
         .collect(Collectors.toList());
 
     final List<ListenerInfo> listenerInfos = DI.getTypesAnnotatedWith(WebListener.class)
-                                         .stream()
-                                         .map(c -> new ListenerInfo((Class<? extends EventListener>) c))
-                                         .collect(Collectors.toList());
+                                               .stream()
+                                               .map(c -> new ListenerInfo((Class<? extends EventListener>) c))
+                                               .collect(Collectors.toList());
 
-    final DeploymentInfo deploymentInfo = deployment()
+    final DeploymentInfo deploymentInfo = deployment();
+
+    deploymentInfo
         .setClassLoader(Main.class.getClassLoader())
         .setContextPath(MYAPP)
         .setDeploymentName("ROOT" + ".war")
         .setDefaultEncoding("UTF-8");
 
-    final Boolean shiroActive = Boolean.valueOf(System.getProperty(SHIRO_ACTIVE_PROPERTY , "true"));
-    if (shiroActive) addShiroFilter(deploymentInfo , DEFAULT_SHIRO_FILTER_NAME , DEFAULT_FILTER_MAPPING);
+    final Boolean stagemonitorActive = Boolean.valueOf(System.getProperty(STAGEMONITOR_ACTIVE_PROPERTY , "false"));
+    if (stagemonitorActive) addStagemonitor(deploymentInfo);
 
     return deploymentInfo
         .addListeners(listenerInfos)
@@ -136,6 +134,8 @@ public class MainUndertow {
     final ServletContainer servletContainer = defaultContainer();
 
     final DeploymentManager manager = servletContainer.addDeployment(createServletDeploymentInfos());
+
+
     manager.deploy();
 
     try {
@@ -156,17 +156,14 @@ public class MainUndertow {
 
   }
 
-  static DeploymentInfo addShiroFilter(DeploymentInfo deploymentInfo ,
-                                       String shiroFilterName ,
-                                       String shiroShiroFilterMappin) {
-    return deploymentInfo.addListener(new ListenerInfo(EnvironmentLoaderListener.class))
-                         .addFilter(new FilterInfo(shiroFilterName , ShiroFilter.class))
-                         .addFilterUrlMapping(shiroFilterName , shiroShiroFilterMappin , REQUEST)
-                         .addFilterUrlMapping(shiroFilterName , shiroShiroFilterMappin , FORWARD)
-                         .addFilterUrlMapping(shiroFilterName , shiroShiroFilterMappin , INCLUDE)
-                         .addFilterUrlMapping(shiroFilterName , shiroShiroFilterMappin , ERROR);
+  static DeploymentInfo addStagemonitor(DeploymentInfo deploymentInfo) {
+    //TODO add for stagemonitor
+    return deploymentInfo.addServletContainerInitalizer(
+        new ServletContainerInitializerInfo(ServletPlugin.class ,
+                                            new ImmediateInstanceFactory<ServletContainerInitializer>(
+                                                new ServletPlugin()) ,
+                                            Collections.emptySet()));
   }
-
 
   public static void stop() {
 

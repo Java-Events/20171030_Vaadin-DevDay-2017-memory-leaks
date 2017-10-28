@@ -1,10 +1,10 @@
 package org.rapidpm.vaadin.trainer.api.security.user;
 
-import java.util.Optional;
+import org.rapidpm.frp.model.Result;
 
 /**
  *
  */
 public interface UserService {
-  Optional<User> loadUser(String login);
+  Result<User> loadUser(String login);
 }
